@@ -6,6 +6,8 @@ import argparse
 import itertools
 from lxml import etree
 
+import colerator
+
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -22,7 +24,26 @@ def main():
         doc = etree.parse(fd)
 
     constraints = []
-    resources = set()
+    resources = {}
+    resources_aux = {}
+
+    for rsrc in doc.xpath('/cib/configuration/resources/*'):
+        id = rsrc.get('id')
+        resources[id] = {
+            'id': id,
+            'kind': rsrc.tag,
+        }
+    for rsrc in doc.xpath('/cib/configuration/resources/*/primitive'):
+        id = rsrc.get('id')
+        resources_aux[id] = {
+            'id': id,
+            'kind': rsrc.tag,
+        }
+
+    kinds = set(x['kind'] for x in resources.values())
+    colors = colerator.Simple(len(kinds))
+    kinds = dict(zip(kinds, colors))
+
     for order in doc.xpath('/cib/configuration/constraints/rsc_order'):
         if order.get('first-action') != 'start':
             continue
@@ -30,8 +51,6 @@ def main():
             continue
 
         constraints.append((order.get('first'), order.get('then')))
-        resources.add(order.get('first'))
-        resources.add(order.get('then'))
 
     if args.debug:
         import pprint
@@ -41,9 +60,15 @@ def main():
     print 'rankdir=LR'
     rids = {}
     counter = itertools.count()
-    for resource in resources:
-        rids[resource] = 'node%d' % counter.next()
-        print '%s [label="%s"]' % (rids[resource], resource)
+    for resource in resources.values():
+        rids[resource['id']] = 'node%d' % counter.next()
+        print '%s [label="%s", color="%s", style="filled"]' % (
+            rids[resource['id']],
+            resource['id'],
+            kinds[resource['kind']])
+
+    for resource in resources_aux.values():
+        rids[resource['id']] = 'node%d' % counter.next()
 
     for left, right in constraints:
         print '%s -> %s' % (rids[left], rids[right])
