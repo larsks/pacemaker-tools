@@ -10,3 +10,6 @@ SVGS = $(CIBS:.xml=.svg)
 
 all: $(SVGS)
 
+clean:
+	rm -f $(SVGS)
+
