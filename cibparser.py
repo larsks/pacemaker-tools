@@ -67,8 +67,15 @@ def main():
             resource['id'],
             kinds[resource['kind']])
 
-    for resource in resources_aux.values():
-        rids[resource['id']] = 'node%d' % counter.next()
+    for left, right in constraints:
+        for id in [left, right]:
+            if id in resources_aux:
+                resource = resources_aux[id]
+                rids[resource['id']] = 'node%d' % counter.next()
+                print '%s [label="%s", color="%s", style="filled"]' % (
+                    rids[resource['id']],
+                    resource['id'],
+                    kinds[resource['kind']])
 
     for left, right in constraints:
         print '%s -> %s' % (rids[left], rids[right])
