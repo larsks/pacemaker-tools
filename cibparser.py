@@ -1,24 +1,35 @@
 #!/usr/bin/python
 
-import os
 import sys
 import argparse
 import itertools
 from lxml import etree
+import logging
 
 import colerator
+
+LOG = logging.getLogger('dotcib')
 
 
 def parse_args():
     p = argparse.ArgumentParser()
+    p.add_argument('--verbose', '-v',
+                   action='store_const',
+                   const=logging.INFO,
+                   dest='loglevel')
     p.add_argument('--debug', '-d',
-                   action='store_true')
+                   action='store_const',
+                   const=logging.DEBUG,
+                   dest='loglevel')
     p.add_argument('cib', nargs='?')
+    p.set_defaults(loglevel=logging.WARN)
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+    logging.basicConfig(
+        level=args.loglevel)
 
     with open(args.cib) if args.cib else sys.stdin as fd:
         doc = etree.parse(fd)
