@@ -13,6 +13,7 @@ LOG = logging.getLogger('dotcib')
 
 def parse_args():
     p = argparse.ArgumentParser()
+    p.add_argument('--output', '-o')
     p.add_argument('--verbose', '-v',
                    action='store_const',
                    const=logging.INFO,
@@ -47,6 +48,10 @@ def main():
             'kind': rsrc.tag,
         }
 
+    # this loop find second-level primitives (primitives contained by
+    # a top-level container such as a clone or resource group).  These
+    # are only displayed on the graph if they are part of an explicit
+    # dependency with another resource.
     LOG.info('finding second-level primitives')
     for rsrc in doc.xpath('/cib/configuration/resources/*/primitive'):
         id = rsrc.get('id')
@@ -63,6 +68,9 @@ def main():
     colors = colerator.Simple(len(kinds))
     kinds = dict(zip(kinds, colors))
 
+    # visible_ids is the list of resource ids that will be included
+    # in the graph.  That means "all top level resources and also any
+    # second-level resources that are part of a dependency".
     visible_ids = set(resources.keys())
 
     LOG.info('finding start constraints')
@@ -79,30 +87,31 @@ def main():
         visible_ids.add(then_id)
         constraints.append((first_id, then_id))
 
-    LOG.info('generating graph')
-    print 'digraph {'
-    print 'rankdir=LR'
+    with open(args.output, 'w') if args.output else sys.stdout as fd:
+        LOG.info('generating graph')
+        print >>fd,  'digraph {'
+        print >>fd,  'rankdir=LR'
 
-    LOG.debug('printing nodes')
-    nodes = {}
-    counter = itertools.count()
-    for rid in visible_ids:
-        rsrc = resources.get(rid, resources_aux.get(rid))
-        if rsrc is None:
-            raise KeyError(rsrc)
-        rsrc['node'] = 'node%d' % counter.next()
-        nodes[rsrc['id']] = rsrc['node']
-        rsrc['color'] = kinds[rsrc['kind']]
+        LOG.debug('print >>fd, ing nodes')
+        nodes = {}
+        counter = itertools.count()
+        for rid in visible_ids:
+            rsrc = resources.get(rid, resources_aux.get(rid))
+            if rsrc is None:
+                raise KeyError(rsrc)
+            rsrc['node'] = 'node%d' % counter.next()
+            nodes[rsrc['id']] = rsrc['node']
+            rsrc['color'] = kinds[rsrc['kind']]
 
-        print '%s [label="%s", color="%s", style="filled"]' % (
-            rsrc['node'],
-            rsrc['id'],
-            rsrc['color'])
+            print >>fd,  '%s [label="%s", color="%s", style="filled"]' % (
+                rsrc['node'],
+                rsrc['id'],
+                rsrc['color'])
 
-    LOG.debug('printing edges')
-    for left, right in constraints:
-        print '%s -> %s' % (nodes[left], nodes[right])
-    print '}'
+        LOG.debug('print >>fd, ing edges')
+        for left, right in constraints:
+            print >>fd,  '%s -> %s' % (nodes[left], nodes[right])
+        print >>fd,  '}'
 
     LOG.info('all done')
 
