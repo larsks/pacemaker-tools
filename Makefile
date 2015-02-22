@@ -1,11 +1,18 @@
 CIBS = $(wildcard cib*.xml)
-SVGS = $(CIBS:.xml=.svg)
+SVGS = $(CIBS:.xml=-start.svg) $(CIBS:.xml=-colocation.svg)
 
-%.dot: %.xml
-	python cibparser.py < $^ > $@ || rm -f $@
+%-start.dot: %.xml
+	python graph-constraints.py -S -o $@ $^
 
-%.svg: %.dot
+%-colocation.dot: %.xml
+	python graph-constraints.py -C -o $@ $^
+
+%-start.svg: %-start.dot
 	dot -Tsvg -o $@ $^
+	sed -i 's/%3/$^/g' $@
+
+%-colocation.svg: %-colocation.dot
+	fdp -Tsvg -o $@ $^
 	sed -i 's/%3/$^/g' $@
 
 all: $(SVGS)
