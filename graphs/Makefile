@@ -2,10 +2,10 @@ CIBS = $(wildcard cib*.xml)
 SVGS = $(CIBS:.xml=-start.svg) $(CIBS:.xml=-colocation.svg)
 
 %-start.dot: %.xml
-	python graph-constraints.py -S -o $@ $^
+	python ../graph-constraints.py -S -o $@ $^
 
 %-colocation.dot: %.xml
-	python graph-constraints.py -C -o $@ $^
+	python ../graph-constraints.py -C -o $@ $^
 
 %-start.svg: %-start.dot
 	dot -Tsvg -o $@ $^
