@@ -1,0 +1,6 @@
+#!/bin/sh
+
+pcs status xml |
+  xmllint --xpath '//resource[@active="false"]/@id' - |
+  tr ' ' '\n' |
+  cut -f2 -d'"'

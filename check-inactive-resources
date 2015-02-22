@@ -1,0 +1,19 @@
+#!/bin/sh
+
+tmpfile=$(mktemp xmlXXXXXX)
+trap "rm -f $tmpfile" EXIT
+
+pcs status xml > $tmpfile
+xmllint --xpath '/crm_mon/resources/*/@id' $tmpfile |
+tr ' ' '\n'| cut -f2 -d'"' |
+while read id; do
+  [ "$id" ] || continue
+  if ! xmllint --xpath "
+      /crm_mon/resources/*[@id='$id' and @active='true']|
+      /crm_mon/resources/*[@id='$id']/*[@active='true']" \
+      $tmpfile > /dev/null 2>&1; then
+    echo "$id: no active resources" >&2
+    exit 1
+  fi
+done
+
