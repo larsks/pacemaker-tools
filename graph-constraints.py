@@ -32,6 +32,8 @@ def parse_args():
                    action='store_const',
                    const='colocation',
                    dest='constraints')
+    p.add_argument('--no-weights', '-n',
+                   action='store_true')
     p.add_argument('cib', nargs='?')
     p.set_defaults(loglevel=logging.WARN,
                    constraints='start')
@@ -70,7 +72,7 @@ def graph_start_constraints(doc):
             nodes[rsrc['id']] = rsrc['node']
             rsrc['color'] = kinds[rsrc['kind']]
 
-            print >>fd,  '%s [label="%s", color="%s", style="filled"]' % (
+            print >>fd,  '%s [label="%s", shape="box", color="%s", style="filled"]' % (
                 rsrc['node'],
                 rsrc['id'],
                 rsrc['color'])
@@ -98,8 +100,8 @@ def graph_colocation_constraints(doc):
 
     with open(args.output, 'w') if args.output else sys.stdout as fd:
         LOG.info('generating graph')
-        print >>fd,  'digraph {'
-        print >>fd,  'rankdir=LR'
+        print >>fd, 'digraph {'
+        print >>fd, 'rankdir=LR'
 
         LOG.debug('printing nodes')
         nodes = {}
@@ -110,17 +112,21 @@ def graph_colocation_constraints(doc):
             nodes[rsrc['id']] = rsrc['node']
             rsrc['color'] = kinds[rsrc['kind']]
 
-            print >>fd,  '%s [label="%s", color="%s", style="filled"]' % (
+            print >>fd,  '%s [label="%s", shape="box", color="%s", style="filled"]' % (
                 rsrc['node'],
                 rsrc['id'],
                 rsrc['color'])
 
         LOG.debug('printing edges')
         for left, right, score in doc.colocation_constraints:
-            print >>fd,  '%s -> %s [label="%s"]' % (
+            print >>fd,  '%s -> %s' % (
                 nodes[left],
-                nodes[right],
-                score)
+                nodes[right]),
+
+            if args.no_weights:
+                print >>fd
+            else:
+                print >>fd, '[label="%s"]' % (score)
         print >>fd,  '}'
 
     LOG.info('all done')

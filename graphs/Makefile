@@ -5,7 +5,7 @@ SVGS = $(CIBS:.xml=-start.svg) $(CIBS:.xml=-colocation.svg)
 	python ../graph-constraints.py -S -o $@ $^
 
 %-colocation.dot: %.xml
-	python ../graph-constraints.py -C -o $@ $^
+	python ../graph-constraints.py -nC -o $@ $^
 
 %-start.svg: %-start.dot
 	dot -Tsvg -o $@ $^
